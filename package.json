@@ -1,5 +1,5 @@
 {
-  "name": "@mathisloge/pre-gyp-github-ts",
+  "name": "@mathisloge/node-pre-gyp-github",
   "version": "1.0.0",
   "description": "",
   "main": "./build/cli.js",
