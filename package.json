@@ -1,6 +1,6 @@
 {
   "name": "@mathisloge/node-pre-gyp-github",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "./dist/cli.js",
   "bin": "./dist/cli.js",

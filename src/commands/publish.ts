@@ -35,7 +35,6 @@ interface PackageJson {
     };
 };
 export const handler = async (argv: Arguments<Options>): Promise<void> => {
-    console.log(argv);
     const token = argv.token;
     if (!token) {
         console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=xxxxxxx node YYY");
@@ -74,7 +73,18 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
         tag: remote_path
     });
 
+    const asset = release.data.assets.find(a => a.name === tar_file_name);
+
     const data = await readFile(tar_file_name);
+    if (asset) {
+        console.log("Deleting existing release asset");
+        await octokit.rest.repos.deleteReleaseAsset({
+            owner: github_owner,
+            repo: github_repo,
+            asset_id: asset.id
+        });
+    }
+    console.log("Uploading release asset");
     await octokit.rest.repos.uploadReleaseAsset({
         owner: github_owner,
         repo: github_repo,
