@@ -5,6 +5,7 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import tar from 'tar';
+import { URL } from 'node:url';
 
 
 type Options = {
@@ -50,49 +51,53 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
 
     const package_json = require(package_json_path) as PackageJson;
     const remote_path = package_json.binary.remote_path.replaceAll('{version}', package_json.version);
-    const module_path = package_json.binary.module_path.replaceAll('{napi_build_version}', '3')
-    const tar_file_name = package_json.binary.package_name
-        .replaceAll('{platform}', platform)
-        .replaceAll('{arch}', arch)
-        .replaceAll('{napi_build_version}', '3');
 
-    console.log(`creating ${tar_file_name}`);
-    await tar.create({
-        gzip: true,
-        file: path.join(cwd(), tar_file_name),
-        cwd: working_dir
-    }, [path.normalize(module_path)]);
 
-    const octokit = new Octokit({ auth: token });
-    const github_url = new URL(package_json.binary.host);
-    const github_url_path = github_url.pathname.split('/');
-    const github_owner = github_url_path[1];
-    const github_repo = github_url_path[2];
+    for await (const napi_version of package_json.binary.napi_versions) {
+        const module_path = package_json.binary.module_path.replaceAll('{napi_build_version}', napi_version.toString())
+        const tar_file_name = package_json.binary.package_name
+            .replaceAll('{platform}', platform)
+            .replaceAll('{arch}', arch)
+            .replaceAll('{napi_build_version}', napi_version.toString());
 
-    console.log(github_url.pathname.split('/'));
+        console.log(`creating ${tar_file_name}`);
+        await tar.create({
+            gzip: true,
+            file: path.join(cwd(), tar_file_name),
+            cwd: working_dir
+        }, [path.normalize(module_path)]);
 
-    const release = await octokit.rest.repos.getReleaseByTag({
-        owner: github_owner,
-        repo: github_repo,
-        tag: remote_path
-    });
+        const octokit = new Octokit({ auth: token });
+        const github_url = new URL(package_json.binary.host);
+        const github_url_path = github_url.pathname.split('/');
+        const github_owner = github_url_path[1];
+        const github_repo = github_url_path[2];
 
-    const asset = release.data.assets.find(a => a.name === tar_file_name);
-    const data = await readFile(tar_file_name);
-    if (asset) {
-        console.log("Deleting existing release asset");
-        await octokit.rest.repos.deleteReleaseAsset({
+        console.log(github_url.pathname.split('/'));
+
+        const release = await octokit.rest.repos.getReleaseByTag({
             owner: github_owner,
             repo: github_repo,
-            asset_id: asset.id
+            tag: remote_path
+        });
+
+        const asset = release.data.assets.find(a => a.name === tar_file_name);
+        const data = await readFile(tar_file_name);
+        if (asset) {
+            console.log("Deleting existing release asset");
+            await octokit.rest.repos.deleteReleaseAsset({
+                owner: github_owner,
+                repo: github_repo,
+                asset_id: asset.id
+            });
+        }
+        console.log("Uploading release asset");
+        await octokit.rest.repos.uploadReleaseAsset({
+            owner: github_owner,
+            repo: github_repo,
+            release_id: release.data.id,
+            name: tar_file_name,
+            data: <string><unknown>data
         });
     }
-    console.log("Uploading release asset");
-    await octokit.rest.repos.uploadReleaseAsset({
-        owner: github_owner,
-        repo: github_repo,
-        release_id: release.data.id,
-        name: tar_file_name,
-        data: <string><unknown>data
-    });
 };
