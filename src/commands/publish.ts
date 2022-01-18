@@ -82,9 +82,4 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
         name: tar_file_name,
         data: <string><unknown>data
     });
-
-    return;
-
-
-
 };
