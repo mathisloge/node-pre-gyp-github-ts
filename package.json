@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "./build/cli.js",
-  "bin": "./build/cli.js",
+  "bin": "./build/node-pre-gyp-github",
   "scripts": {
-    "test": "node ./build/cli.js publish",
+    "test": "node node-pre-gyp-github publish",
     "build": "npx tsc"
   },
   "keywords": [
