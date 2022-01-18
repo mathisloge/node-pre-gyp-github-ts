@@ -5,9 +5,12 @@
   "main": "./build/cli.js",
   "bin": "./build/cli.js",
   "scripts": {
-    "test": "node ./build/cli.js publish"
+    "test": "node ./build/cli.js publish",
+    "build": "npx tsc"
   },
-  "keywords": ["node-pre-gyp"],
+  "keywords": [
+    "node-pre-gyp"
+  ],
   "author": "Mathis Logemann",
   "license": "MIT",
   "devDependencies": {
