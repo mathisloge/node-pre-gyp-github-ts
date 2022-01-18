@@ -61,7 +61,6 @@ const handler = async (argv) => {
         name: tar_file_name,
         data: data
     });
-    return;
 };
 exports.handler = handler;
 //# sourceMappingURL=publish.js.map
