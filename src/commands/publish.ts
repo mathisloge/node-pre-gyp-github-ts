@@ -37,7 +37,7 @@ interface PackageJson {
 export const handler = async (argv: Arguments<Options>): Promise<void> => {
     const token = argv.token;
     if (!token) {
-        console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=xxxxxxx node YYY");
+        console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=<your token here> node node-pre-gyp-github");
         exit(-1);
     }
     const working_dir = argv.cwd ? argv.cwd : cwd();
