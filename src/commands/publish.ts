@@ -50,14 +50,18 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
 
     const package_json = require(package_json_path) as PackageJson;
     const remote_path = package_json.binary.remote_path.replaceAll('{version}', package_json.version);
-    const module_path = path.join(working_dir, package_json.binary.module_path.replaceAll('{napi_build_version}', '3'));
+    const module_path = package_json.binary.module_path.replaceAll('{napi_build_version}', '3')
     const tar_file_name = package_json.binary.package_name
         .replaceAll('{platform}', platform)
         .replaceAll('{arch}', arch)
         .replaceAll('{napi_build_version}', '3');
 
     console.log(`creating ${tar_file_name}`);
-    await tar.create({ gzip: true, file: tar_file_name }, [module_path]);
+    await tar.create({
+        gzip: true,
+        file: path.join(cwd(), tar_file_name),
+        cwd: working_dir
+    }, [path.normalize(module_path)]);
 
     const octokit = new Octokit({ auth: token });
     const github_url = new URL(package_json.binary.host);
@@ -74,7 +78,6 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
     });
 
     const asset = release.data.assets.find(a => a.name === tar_file_name);
-
     const data = await readFile(tar_file_name);
     if (asset) {
         console.log("Deleting existing release asset");

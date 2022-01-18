@@ -34,13 +34,17 @@ const handler = async (argv) => {
     }
     const package_json = require(package_json_path);
     const remote_path = package_json.binary.remote_path.replaceAll('{version}', package_json.version);
-    const module_path = path_1.default.join(working_dir, package_json.binary.module_path.replaceAll('{napi_build_version}', '3'));
+    const module_path = package_json.binary.module_path.replaceAll('{napi_build_version}', '3');
     const tar_file_name = package_json.binary.package_name
         .replaceAll('{platform}', process_1.platform)
         .replaceAll('{arch}', process_1.arch)
         .replaceAll('{napi_build_version}', '3');
     console.log(`creating ${tar_file_name}`);
-    await tar_1.default.create({ gzip: true, file: tar_file_name }, [module_path]);
+    await tar_1.default.create({
+        gzip: true,
+        file: path_1.default.join((0, process_1.cwd)(), tar_file_name),
+        cwd: working_dir
+    }, [path_1.default.normalize(module_path)]);
     const octokit = new octokit_1.Octokit({ auth: token });
     const github_url = new URL(package_json.binary.host);
     const github_url_path = github_url.pathname.split('/');
