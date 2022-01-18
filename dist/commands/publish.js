@@ -22,7 +22,7 @@ exports.builder = builder;
 const handler = async (argv) => {
     const token = argv.token;
     if (!token) {
-        console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=xxxxxxx node YYY");
+        console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=<your token here> node node-pre-gyp-github");
         (0, process_1.exit)(-1);
     }
     const working_dir = argv.cwd ? argv.cwd : (0, process_1.cwd)();
