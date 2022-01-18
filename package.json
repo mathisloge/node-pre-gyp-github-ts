@@ -1,16 +1,15 @@
 {
-  "name": "pre-gyp-github-ts",
+  "name": "@mathisloge/pre-gyp-github-ts",
   "version": "1.0.0",
   "description": "",
   "main": "./build/cli.js",
   "bin": "./build/cli.js",
   "scripts": {
-    "package": "pkg . --targets node14-macos-x64 --output hello",
     "test": "node ./build/cli.js publish"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["node-pre-gyp"],
+  "author": "Mathis Logemann",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^17.0.9",
     "@types/tar": "^6.1.1",
