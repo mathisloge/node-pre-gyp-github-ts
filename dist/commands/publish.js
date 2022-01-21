@@ -52,8 +52,9 @@ var process_1 = require("process");
 var promises_1 = require("fs/promises");
 var fs_1 = require("fs");
 var path_1 = __importDefault(require("path"));
-var tar_1 = __importDefault(require("tar"));
 var node_url_1 = require("node:url");
+// @ts-ignore
+var versioning_js_1 = __importDefault(require("@mapbox/node-pre-gyp/lib/util/versioning.js"));
 exports.command = 'publish';
 exports.desc = 'Publishes the package';
 var builder = function (yargs) {
@@ -66,16 +67,11 @@ var builder = function (yargs) {
 exports.builder = builder;
 ;
 var handler = function (argv) { return __awaiter(void 0, void 0, void 0, function () {
-    var token, working_dir, package_json_path, package_json, remote_path, _a, _b, napi_version, module_path, tar_file_name, octokit, github_url, github_url_path, github_owner, github_repo, release, asset, data, e_1_1;
+    var working_dir, package_json_path, package_json, token, _a, _b, napi_version, node_pre_gyp_opts, package_name, tarball, remote_path, octokit, github_url, github_url_path, github_owner, github_repo, release, asset, data, e_1_1;
     var e_1, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
-                token = argv.token;
-                if (!token) {
-                    console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=<your token here> node node-pre-gyp-github");
-                    (0, process_1.exit)(-1);
-                }
                 working_dir = argv.cwd ? argv.cwd : (0, process_1.cwd)();
                 console.log((0, process_1.cwd)());
                 package_json_path = path_1.default.join(working_dir, 'package.json');
@@ -84,29 +80,24 @@ var handler = function (argv) { return __awaiter(void 0, void 0, void 0, functio
                     (0, process_1.exit)(-1);
                 }
                 package_json = require(package_json_path);
-                remote_path = package_json.binary.remote_path.replaceAll('{version}', package_json.version);
+                token = argv.token;
+                if (!token) {
+                    console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=<your token here> node node-pre-gyp-github");
+                    (0, process_1.exit)(-1);
+                }
                 _d.label = 1;
             case 1:
-                _d.trys.push([1, 12, 13, 18]);
+                _d.trys.push([1, 11, 12, 17]);
                 _a = __asyncValues(package_json.binary.napi_versions);
                 _d.label = 2;
             case 2: return [4 /*yield*/, _a.next()];
             case 3:
-                if (!(_b = _d.sent(), !_b.done)) return [3 /*break*/, 11];
+                if (!(_b = _d.sent(), !_b.done)) return [3 /*break*/, 10];
                 napi_version = _b.value;
-                module_path = package_json.binary.module_path.replaceAll('{napi_build_version}', napi_version.toString());
-                tar_file_name = package_json.binary.package_name
-                    .replaceAll('{platform}', process_1.platform)
-                    .replaceAll('{arch}', process_1.arch)
-                    .replaceAll('{napi_build_version}', napi_version.toString());
-                console.log("creating ".concat(tar_file_name));
-                return [4 /*yield*/, tar_1.default.create({
-                        gzip: true,
-                        file: path_1.default.join((0, process_1.cwd)(), tar_file_name),
-                        cwd: working_dir
-                    }, [path_1.default.normalize(module_path)])];
-            case 4:
-                _d.sent();
+                node_pre_gyp_opts = versioning_js_1.default.evaluate(package_json, {}, napi_version);
+                package_name = node_pre_gyp_opts.package_name;
+                tarball = node_pre_gyp_opts.staged_tarball;
+                remote_path = node_pre_gyp_opts.remote_path.split('/')[0];
                 octokit = new octokit_1.Octokit({ auth: token });
                 github_url = new node_url_1.URL(package_json.binary.host);
                 github_url_path = github_url.pathname.split('/');
@@ -118,53 +109,53 @@ var handler = function (argv) { return __awaiter(void 0, void 0, void 0, functio
                         repo: github_repo,
                         tag: remote_path
                     })];
-            case 5:
+            case 4:
                 release = _d.sent();
-                asset = release.data.assets.find(function (a) { return a.name === tar_file_name; });
-                return [4 /*yield*/, (0, promises_1.readFile)(tar_file_name)];
-            case 6:
+                asset = release.data.assets.find(function (a) { return a.name === package_name; });
+                return [4 /*yield*/, (0, promises_1.readFile)(tarball)];
+            case 5:
                 data = _d.sent();
-                if (!asset) return [3 /*break*/, 8];
+                if (!asset) return [3 /*break*/, 7];
                 console.log("Deleting existing release asset");
                 return [4 /*yield*/, octokit.rest.repos.deleteReleaseAsset({
                         owner: github_owner,
                         repo: github_repo,
                         asset_id: asset.id
                     })];
-            case 7:
+            case 6:
                 _d.sent();
-                _d.label = 8;
-            case 8:
+                _d.label = 7;
+            case 7:
                 console.log("Uploading release asset");
                 return [4 /*yield*/, octokit.rest.repos.uploadReleaseAsset({
                         owner: github_owner,
                         repo: github_repo,
                         release_id: release.data.id,
-                        name: tar_file_name,
+                        name: package_name,
                         data: data
                     })];
-            case 9:
+            case 8:
                 _d.sent();
-                _d.label = 10;
-            case 10: return [3 /*break*/, 2];
-            case 11: return [3 /*break*/, 18];
-            case 12:
+                _d.label = 9;
+            case 9: return [3 /*break*/, 2];
+            case 10: return [3 /*break*/, 17];
+            case 11:
                 e_1_1 = _d.sent();
                 e_1 = { error: e_1_1 };
-                return [3 /*break*/, 18];
-            case 13:
-                _d.trys.push([13, , 16, 17]);
-                if (!(_b && !_b.done && (_c = _a.return))) return [3 /*break*/, 15];
+                return [3 /*break*/, 17];
+            case 12:
+                _d.trys.push([12, , 15, 16]);
+                if (!(_b && !_b.done && (_c = _a.return))) return [3 /*break*/, 14];
                 return [4 /*yield*/, _c.call(_a)];
-            case 14:
+            case 13:
                 _d.sent();
-                _d.label = 15;
-            case 15: return [3 /*break*/, 17];
-            case 16:
+                _d.label = 14;
+            case 14: return [3 /*break*/, 16];
+            case 15:
                 if (e_1) throw e_1.error;
                 return [7 /*endfinally*/];
-            case 17: return [7 /*endfinally*/];
-            case 18: return [2 /*return*/];
+            case 16: return [7 /*endfinally*/];
+            case 17: return [2 /*return*/];
         }
     });
 }); };

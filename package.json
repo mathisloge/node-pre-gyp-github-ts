@@ -1,11 +1,11 @@
 {
   "name": "@mathisloge/node-pre-gyp-github",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "",
   "main": "./dist/cli.js",
   "bin": "./dist/cli.js",
   "scripts": {
-    "test": "node ./dist/cli.js publish",
+    "test": "node ./dist/cli.js publish --cwd D:/dev/node-mapnik",
     "build": "npx tsc"
   },
   "keywords": [
@@ -15,13 +15,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^17.0.9",
-    "@types/tar": "^6.1.1",
     "@types/yargs": "^17.0.8",
     "typescript": "^4.5.4"
   },
   "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.8",
     "octokit": "^1.7.1",
-    "tar": "^6.1.11",
     "yargs": "^17.3.1"
   }
 }

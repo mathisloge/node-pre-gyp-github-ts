@@ -1,12 +1,13 @@
 import { Arguments, CommandBuilder } from 'yargs';
 import { Octokit } from "octokit";
-import { exit, cwd, arch, platform } from 'process';
+import { exit, cwd } from 'process';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import tar from 'tar';
 import { URL } from 'node:url';
 
+// @ts-ignore
+import versioning from '@mapbox/node-pre-gyp/lib/util/versioning.js';
 
 type Options = {
     cwd: string | undefined;
@@ -36,11 +37,6 @@ interface PackageJson {
     };
 };
 export const handler = async (argv: Arguments<Options>): Promise<void> => {
-    const token = argv.token;
-    if (!token) {
-        console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=<your token here> node node-pre-gyp-github");
-        exit(-1);
-    }
     const working_dir = argv.cwd ? argv.cwd : cwd();
     console.log(cwd());
     const package_json_path = path.join(working_dir, 'package.json');
@@ -48,24 +44,20 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
         console.error("Current working dir has no package.json");
         exit(-1);
     }
-
     const package_json = require(package_json_path) as PackageJson;
-    const remote_path = package_json.binary.remote_path.replaceAll('{version}', package_json.version);
 
+    const token = argv.token;
+    if (!token) {
+        console.error("NODE_PRE_GYP_GITHUB_TOKEN not present. Usage: NODE_PRE_GYP_GITHUB=<your token here> node node-pre-gyp-github");
+        exit(-1);
+    }
 
     for await (const napi_version of package_json.binary.napi_versions) {
-        const module_path = package_json.binary.module_path.replaceAll('{napi_build_version}', napi_version.toString())
-        const tar_file_name = package_json.binary.package_name
-            .replaceAll('{platform}', platform)
-            .replaceAll('{arch}', arch)
-            .replaceAll('{napi_build_version}', napi_version.toString());
+        const node_pre_gyp_opts = versioning.evaluate(package_json, {}, napi_version);
+        const package_name = node_pre_gyp_opts.package_name;
+        const tarball = node_pre_gyp_opts.staged_tarball;
+        const remote_path = node_pre_gyp_opts.remote_path.split('/')[0]; // node pre gyp adds a / to the end.
 
-        console.log(`creating ${tar_file_name}`);
-        await tar.create({
-            gzip: true,
-            file: path.join(cwd(), tar_file_name),
-            cwd: working_dir
-        }, [path.normalize(module_path)]);
 
         const octokit = new Octokit({ auth: token });
         const github_url = new URL(package_json.binary.host);
@@ -81,8 +73,8 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
             tag: remote_path
         });
 
-        const asset = release.data.assets.find(a => a.name === tar_file_name);
-        const data = await readFile(tar_file_name);
+        const asset = release.data.assets.find(a => a.name === package_name);
+        const data = await readFile(tarball);
         if (asset) {
             console.log("Deleting existing release asset");
             await octokit.rest.repos.deleteReleaseAsset({
@@ -96,7 +88,7 @@ export const handler = async (argv: Arguments<Options>): Promise<void> => {
             owner: github_owner,
             repo: github_repo,
             release_id: release.data.id,
-            name: tar_file_name,
+            name: package_name,
             data: <string><unknown>data
         });
     }
